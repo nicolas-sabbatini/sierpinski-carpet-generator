@@ -1,0 +1,23 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+main canvas {
+    display: flex;
+}
+
+p {
+    display: flex;
+    justify-content: center;
+    margin-left: 24px;
+    margin-top: 24px;
+    font-family: 'Ubuntu', sans-serif;
+}
+
+main {
+    display: flex;
+    width: 100%;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
