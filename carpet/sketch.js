@@ -1,14 +1,6 @@
 // Set up variables
-// Amount of loops per draw call, a big number can make framerate to drop
-let loops = 500;
-
-// How much the loops variable increase between draw calls
-let increase_loop = 1;
-
-// Corners
-let points_carpet = {
-    big: [[0, 0], [1080, 1080]],
-}
+// Amount of pixels draw per draw call (a big number can make framerate to drop)
+let draw_speed = 500;
 
 // Color palettes
 let palettes = [
@@ -30,9 +22,6 @@ let base = [3, 3];
 // Ignored points
 let ignored_remainder = [[1, 1]];
 
-// Use random
-let use_random = false;
-
 // Record interface
 let capturer = new CCapture({
     format: 'png',
@@ -44,24 +33,14 @@ let _recording = false;
 let _buffer = [];
 let _buffer_index = 0;
 
-// Help
+// Help TODO
 function help() {
     console.log('Available functions:\n' +
-        'Help() -> Print this help\n' +
-        'push_color_pallet(base, accent) -> Add a new color pallet (base: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255], accent: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255])\n' +
-        'push_ignore_remainder(r_x, r_y) -> Add new ignore remainder\n' +
-        'pop_ignore_remainder(index) -> Add remove ignore remainder\n' +
-        'new_base(b_x, b_y) -> Create a new base\n' +
-        'new_drawnew_draw(index_palette, loop_speed?) -> Clear screen and select new color pallet\n' +
+        'help() -> Print this help\n' +
         '\n' +
         'Variables:\n' +
-        'loop -> Amount of loops per draw call, a big number can make framerate to drop\n' +
-        'increase_loop -> How much the loops variable increase between draw calls\n' +
-        'palettes -> colors palettes\n' +
         '\n' +
         'How to record:\n' +
-        'start_record(loop_speed?, new_increase_loop?)\n' +
-        'stop_record()\n' +
         '\n');
 }
 
@@ -72,13 +51,13 @@ help();
 // Add a new color pallet
 // base: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255]
 // accent: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255]
-function push_color_pallet(base, accent) {
+function add_color_pallet(base, accent) {
     palettes.push([base, accent]);
     return `New color pallet added, index: ${palettes.length - 1}`;
 }
 
 // Add new ignore remainder
-function push_ignore_remainder(r_x, r_y) {
+function add_ignore_remainder(r_x, r_y) {
     if (!r_x || r_x < 1 || !r_y || r_y < 1) {
         return `Error: r_x and r_y must be grater than 1`
     }
@@ -88,7 +67,7 @@ function push_ignore_remainder(r_x, r_y) {
 }
 
 // Add remove ignore remainder
-function pop_ignore_remainder(index) {
+function remove_ignore_remainder(index) {
     ignored_remainder.splice(index, 1);
 }
 
@@ -102,10 +81,21 @@ function new_base(b_x, b_y) {
     return base;
 }
 
-// Public sketch functions
+// Shuffle draw buffer
+function shuffle_buffer() {
+    for (let r = 0; r < 20; r++) {
+        for (let i = _buffer.length - 1; i > _buffer_index; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = _buffer[i];
+            _buffer[i] = _buffer[j];
+            _buffer[j] = temp;
+        }
+    }
+}
 
-// Clear screen and select new color pallet
-function new_draw(index_palette, loop_speed) {
+// Public sketch functions
+// Clear screen, create a new draw buffer (can shuffle it if needed) and select new color pallet
+function new_draw(index_palette, random, loop_speed) {
     // If the palette dont exist
     if (!palettes[index_palette] || palettes[index_palette].length < 2 ||
         !palettes[index_palette][0] || palettes[index_palette][0].length < 1 ||
@@ -119,7 +109,7 @@ function new_draw(index_palette, loop_speed) {
     background(palettes[current_palette][0]);
 
     // set loops
-    loops = loop_speed || loops;
+    draw_speed = loop_speed || draw_speed;
 
     // create buffer
     for (let x = 0; x < width; x++) {
@@ -127,20 +117,24 @@ function new_draw(index_palette, loop_speed) {
             _buffer[(y * width) + x] = (y * width) + x;
         }
     }
-    _shuffle_buffer();
     _buffer_index = 0
+
+    if (random) {
+        shuffle_buffer();
+    }
 
     return `Using palette: ${current_palette}`;
 }
 
-function start_record(loop_speed, new_increase_loop) {
-    loops = loop_speed || loops;
-    increase_loop = new_increase_loop || increase_loop;
+// Start recording, before recording runs new_draw(), so the function need the
+// new_draw() arguments
+function start_record(index_palette, random, loop_speed) {
     _recording = true;
-    new_draw();
+    new_draw(index_palette, random, loop_speed);
     capturer.start();
 }
 
+// Stop the recording and saves to disc
 function stop_record() {
     _recording = false;
     capturer.stop();
@@ -151,25 +145,20 @@ function stop_record() {
 // Setup p5js
 function setup() {
     // Create canvas
-    createCanvas(1080, 1035); //1920);
+    createCanvas(1080, 1080); //1920);
     // Start with the first color pallet
     new_draw(0);
 }
 
 // Draw p5js
 function draw() {
+    // Get colors
     fill(palettes[current_palette][1]);
     noStroke();
-    // Draw 500 frames in one
-    for (let i = 0; i < loops; i++) {
-        if (use_random) {
-            _new_point_carpet_random('big');
-        } else {
-            _new_point_carpet_buffer();
-        }
+    // draw
+    for (let i = 0; i < draw_speed; i++) {
+        _new_point_carpet_buffer();
     }
-
-    loops = min(loops * increase_loop, 1000);
 
     if (_recording) {
         capturer.capture(document.getElementById('defaultCanvas0'));
@@ -177,40 +166,13 @@ function draw() {
 }
 
 // Private execution functions, you can use them from the console too
-
-// Draw a new random point
-function _new_point_carpet_random(quadrant) {
-    // Select limits of the drawing
-    const top_left_corner = points_carpet[quadrant][0];
-    const bot_down_corner = points_carpet[quadrant][1];
-
-    // Select random point
-    const x = floor(random(top_left_corner[0] + 1, bot_down_corner[0] + 1));
-    const y = floor(random(top_left_corner[1] + 1, bot_down_corner[1] + 1));
-
-    // Draw the point if necessary
-    if (_can_draw_carpet_point(x, y)) {
-        ellipse(x, y, 1);
-    }
-}
-
+// but is not recommended
 function _to_x(num) {
     return floor(num % width);
 }
 
 function _to_y(num) {
     return floor((num - (num % width)) / width);
-}
-
-function _shuffle_buffer() {
-    for (let r = 0; r < 20; r++) {
-        for (let i = _buffer.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let temp = _buffer[i];
-            _buffer[i] = _buffer[j];
-            _buffer[j] = temp;
-        }
-    }
 }
 
 function _new_point_carpet_buffer() {
@@ -226,7 +188,6 @@ function _new_point_carpet_buffer() {
         _buffer_index++;
     }
 }
-
 
 // Check if the point can be draw
 function _can_draw_carpet_point(x, y) {
