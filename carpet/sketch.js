@@ -1,5 +1,5 @@
 // Set up variables
-// Amount of pixels draw per draw call (a big number can make framerate to drop)
+// Amount of pixels to draw per draw call (a big number can make framerate to drop)
 let draw_speed = 500;
 
 // Color palettes
@@ -33,15 +33,30 @@ let _recording = false;
 let _buffer = [];
 let _buffer_index = 0;
 
-// Help TODO
+// Help
 function help() {
-    console.log('Available functions:\n' +
-        'help() -> Print this help\n' +
-        '\n' +
-        'Variables:\n' +
-        '\n' +
-        'How to record:\n' +
-        '\n');
+    console.log(
+    `Available functions:
+    help() -> Print this help.
+    new_draw(index_palette, random, new_draw_speed) -> Clear screen, create a new draw buffer (can shuffle it if needed) and select new color pallet (index of the color palette to use, if needs to shuffle the draw buffer, new draw speed ).
+    add_color_pallet(base, accent) -> Add a new color pallet (base: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255] accent: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255]).
+    add_ignore_remainder(r_x, r_y) -> Add new ignore remainder (0 <= r_x, 0 <= r_y).
+    remove_ignore_remainder(index) -> Add remove ignore remainder (0 <= index <= ignored_remainder.length).
+    change_base(b_x, b_y) -> Change base of the fractal (0 <= b_x, 0 <= b_y).
+    shuffle_buffer() -> Shuffle draw buffer.
+    
+    
+    Variables:
+    draw_speed -> Amount of pixels to draw per draw call (a big number can make framerate to drop).
+    palettes -> List of color palettes.
+    current_palette -> The index of the color palette in use.
+    base -> Current base of the fractal.
+    ignored_remainder -> A list of current ignored remainder.
+     
+    How to record:
+    start_record(index_palette, random, loop_speed) -> Start recording, before recording runs new_draw(), so the function need the new_draw() arguments.
+    stop_record() -> Stop the recording and saves to disc.
+    `);
 }
 
 help();
@@ -72,30 +87,17 @@ function remove_ignore_remainder(index) {
 }
 
 // Create a new base
-function new_base(b_x, b_y) {
+function change_base(b_x, b_y) {
     if (!b_x || b_x < 1 || !b_y || b_y < 1) {
         return `Error: b_x and b_y must be grater than 1`
     }
     base = [b_x, b_y]
-    new_draw(current_palette);
     return base;
-}
-
-// Shuffle draw buffer
-function shuffle_buffer() {
-    for (let r = 0; r < 20; r++) {
-        for (let i = _buffer.length - 1; i > _buffer_index; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let temp = _buffer[i];
-            _buffer[i] = _buffer[j];
-            _buffer[j] = temp;
-        }
-    }
 }
 
 // Public sketch functions
 // Clear screen, create a new draw buffer (can shuffle it if needed) and select new color pallet
-function new_draw(index_palette, random, loop_speed) {
+function new_draw(index_palette, random, new_draw_speed) {
     // If the palette dont exist
     if (!palettes[index_palette] || palettes[index_palette].length < 2 ||
         !palettes[index_palette][0] || palettes[index_palette][0].length < 1 ||
@@ -109,7 +111,7 @@ function new_draw(index_palette, random, loop_speed) {
     background(palettes[current_palette][0]);
 
     // set loops
-    draw_speed = loop_speed || draw_speed;
+    draw_speed = new_draw_speed || draw_speed;
 
     // create buffer
     for (let x = 0; x < width; x++) {
@@ -124,6 +126,18 @@ function new_draw(index_palette, random, loop_speed) {
     }
 
     return `Using palette: ${current_palette}`;
+}
+
+// Shuffle draw buffer
+function shuffle_buffer() {
+    for (let r = 0; r < 20; r++) {
+        for (let i = _buffer.length - 1; i > _buffer_index; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = _buffer[i];
+            _buffer[i] = _buffer[j];
+            _buffer[j] = temp;
+        }
+    }
 }
 
 // Start recording, before recording runs new_draw(), so the function need the
