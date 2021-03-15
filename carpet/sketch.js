@@ -36,7 +36,7 @@ let _buffer_index = 0;
 // Help
 function help() {
     console.log(
-    `Available functions:
+        `Available functions:
     help() -> Print this help.
     new_draw(index_palette, random, new_draw_speed) -> Clear screen, create a new draw buffer (can shuffle it if needed) and select new color pallet (index of the color palette to use, if needs to shuffle the draw buffer, new draw speed ).
     add_color_pallet(base, accent) -> Add a new color pallet (base: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255] accent: [0 <= r <= 255, 0 <= g <= 255, 0 <= b <= 255]).
@@ -77,7 +77,6 @@ function add_ignore_remainder(r_x, r_y) {
         return `Error: r_x and r_y must be grater than 1`
     }
     ignored_remainder.push([r_x, r_y]);
-    new_draw(current_palette);
     return ignored_remainder;
 }
 
@@ -130,13 +129,11 @@ function new_draw(index_palette, random, new_draw_speed) {
 
 // Shuffle draw buffer
 function shuffle_buffer() {
-    for (let r = 0; r < 20; r++) {
-        for (let i = _buffer.length - 1; i > _buffer_index; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let temp = _buffer[i];
-            _buffer[i] = _buffer[j];
-            _buffer[j] = temp;
-        }
+    for (let i = _buffer_index; i < _buffer.length; i++) {
+        let j = floor(random(_buffer_index, _buffer.length));
+        let temp = _buffer[i];
+        _buffer[i] = _buffer[j];
+        _buffer[j] = temp;
     }
 }
 
