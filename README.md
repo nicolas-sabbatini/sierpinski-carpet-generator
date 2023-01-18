@@ -18,3 +18,6 @@ Once inside the app, you can open the developer console (ctrl + shift + k) and l
 - Record and download the carpet creation.
 - 2 methods of carpet creation (sequential or random).
 - Multiple color pallets (8 different color pallets, you can add your own).
+
+### TODO
+[] Migrate wbsite
